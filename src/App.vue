@@ -24,8 +24,8 @@ const showDrawer = ref(false)
 .app {
   width: 100%;
   min-height: 100vh;
-  background: #0a0a0f;
-  color: #fff;
+  background: var(--bg-dark);
+  color: var(--text-primary);
 }
 
 .main-container {

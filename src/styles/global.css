@@ -6,8 +6,8 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: #0a0a0f;
-  color: #e0e0e0;
+  background: var(--bg-dark);
+  color: var(--text-primary);
   overflow-x: hidden;
 }
 
@@ -29,6 +29,48 @@ body {
   --success-color: #10b981;
   --warning-color: #f59e0b;
   --error-color: #ef4444;
+}
+
+:root.light {
+  --bg-dark: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-light: #f1f5f9;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+}
+
+/* Element Plus 深色模式适配 */
+:root.dark {
+  --el-bg-color: var(--bg-dark);
+  --el-bg-color-page: var(--bg-dark);
+  --el-bg-color-overlay: var(--bg-card);
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-secondary);
+  --el-text-color-secondary: var(--text-muted);
+  --el-border-color: var(--border-color);
+  --el-border-color-light: var(--border-color);
+  --el-border-color-lighter: var(--border-color);
+  --el-fill-color: var(--bg-light);
+  --el-fill-color-light: var(--bg-card);
+  --el-fill-color-lighter: var(--bg-light);
+}
+
+/* Element Plus 浅色模式适配 */
+:root.light {
+  --el-bg-color: var(--bg-dark);
+  --el-bg-color-page: var(--bg-dark);
+  --el-bg-color-overlay: var(--bg-card);
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-secondary);
+  --el-text-color-secondary: var(--text-muted);
+  --el-border-color: var(--border-color);
+  --el-border-color-light: var(--border-color);
+  --el-border-color-lighter: var(--border-color);
+  --el-fill-color: var(--bg-light);
+  --el-fill-color-light: var(--bg-card);
+  --el-fill-color-lighter: var(--bg-light);
 }
 
 .card {

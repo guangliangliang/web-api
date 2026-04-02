@@ -115,9 +115,8 @@ const handleApiClick = (api: any) => {
 .page-title {
   font-size: 32px;
   font-weight: 700;
-  color: #fff;
   margin-bottom: 8px;
-  background: linear-gradient(90deg, #fff 0%, var(--primary-hover) 100%);
+  background: linear-gradient(90deg, var(--text-primary) 0%, var(--primary-hover) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -197,7 +196,7 @@ const handleApiClick = (api: any) => {
 .api-name {
   font-size: 16px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
