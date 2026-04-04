@@ -1,13 +1,22 @@
 <template>
   <div class="app">
-    <Header />
+    <Header @search="handleSearch" />
     <div class="main-container">
-      <Sidebar />
+      <Sidebar @category-change="handleCategoryChange" />
       <main class="content">
-        <router-view @open-drawer="showDrawer = true" />
+        <router-view 
+          @open-drawer="showDrawer = true" 
+          @api-selected="handleApiSelected"
+          :selected-category="selectedCategory"
+          :search-query="searchQuery"
+        />
       </main>
     </div>
-    <ApiDetailDrawer v-if="showDrawer" @close="showDrawer = false" />
+    <ApiDetailDrawer 
+      v-if="showDrawer" 
+      @close="showDrawer = false"
+      :selected-api="selectedApi"
+    />
   </div>
 </template>
 
@@ -16,8 +25,24 @@ import { ref } from 'vue'
 import Header from './components/Header.vue'
 import Sidebar from './components/Sidebar.vue'
 import ApiDetailDrawer from './components/ApiDetailDrawer.vue'
+import type { ApiItem } from './types'
 
 const showDrawer = ref(false)
+const selectedApi = ref<ApiItem | null>(null)
+const selectedCategory = ref('all')
+const searchQuery = ref('')
+
+const handleApiSelected = (api: ApiItem) => {
+  selectedApi.value = api
+}
+
+const handleCategoryChange = (categoryId: string) => {
+  selectedCategory.value = categoryId
+}
+
+const handleSearch = (query: string) => {
+  searchQuery.value = query
+}
 </script>
 
 <style scoped>

@@ -2,49 +2,88 @@
   <aside class="sidebar">
     <div class="category-section card">
       <h3 class="section-title">接口分类</h3>
-      <div class="category-list">
+
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-container">
+        <el-skeleton :rows="8" animated />
+      </div>
+
+      <!-- 错误状态 -->
+      <div v-else-if="error" class="error-container">
+        <el-empty description="获取分类失败" />
+        <el-button type="primary" size="small" @click="fetchCategoriesData"
+          >重试</el-button
+        >
+      </div>
+
+      <!-- 分类列表 -->
+      <div v-else class="category-list">
         <div
           v-for="category in categories"
           :key="category.id"
           class="category-item"
           :class="{ active: activeCategory === category.id }"
-          @click="activeCategory = category.id"
+          @click="handleCategoryClick(category.id)"
         >
           <el-icon :size="18" class="category-icon">
-            <component :is="category.icon" />
+            <component :is="getCategoryIcon(category.name)" />
           </el-icon>
           <span class="category-name">{{ category.name }}</span>
           <span class="category-count">{{ category.count }}</span>
         </div>
       </div>
     </div>
-
-    <div class="promo-section card">
-      <div class="promo-icon">
-        <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M30 2L10 14V46L30 58L50 46V14L30 2Z" fill="url(#promoGradient)" />
-          <path d="M30 18L37.5 22.5V37.5L30 42L22.5 37.5V22.5L30 18Z" fill="#fff" opacity="0.8" />
-          <defs>
-            <linearGradient id="promoGradient" x1="30" y1="2" x2="30" y2="58" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#7c3aed" />
-              <stop offset="1" stop-color="#8b5cf6" />
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
-      <h3 class="promo-title">完全免费</h3>
-      <p class="promo-desc">所有接口免费开放，无限制调用，无需注册</p>
-      <el-button class="promo-btn" type="primary" size="default">查看使用指南</el-button>
-    </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import * as ElementPlusIcons from '@element-plus/icons-vue'
-import { categories } from '../mock'
+import { ref, onMounted } from "vue";
+import * as ElementPlusIcons from "@element-plus/icons-vue";
+import { fetchCategories } from "../mock";
+import type { ApiCategory } from "../types";
 
-const activeCategory = ref('all')
+const emit = defineEmits(["categoryChange"]);
+
+const activeCategory = ref("all");
+const categories = ref<ApiCategory[]>([]);
+const loading = ref(false);
+const error = ref(false);
+
+const fetchCategoriesData = async () => {
+  loading.value = true;
+  error.value = false;
+
+  try {
+    const data = await fetchCategories();
+    categories.value = data;
+  } catch (err) {
+    console.error("Failed to fetch categories:", err);
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
+};
+
+const handleCategoryClick = (categoryId: string) => {
+  activeCategory.value = categoryId;
+  emit("categoryChange", categoryId);
+};
+
+// 为不同分类映射图标
+const getCategoryIcon = (categoryName: string): string => {
+  const iconMap: Record<string, string> = {
+    '全部接口': 'Folder',
+    '生活查询': 'HomeFilled',
+    '识别服务': 'Camera',
+    '实用工具': 'Tools',
+    '邮件查询': 'Message'
+  };
+  return iconMap[categoryName] || 'Folder';
+};
+
+onMounted(() => {
+  fetchCategoriesData();
+});
 </script>
 
 <style scoped>
@@ -142,6 +181,19 @@ const activeCategory = ref('all')
 
 .promo-btn {
   width: 100%;
+}
+
+.loading-container {
+  padding: 16px 0;
+}
+
+.error-container {
+  padding: 20px 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 @media (max-width: 768px) {

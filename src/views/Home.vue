@@ -1,8 +1,10 @@
 <template>
   <div class="home-page">
     <div class="header-section">
-      <h2 class="page-title">探索 156+ 个免费 API 接口</h2>
-      <p class="page-subtitle">覆盖 AI、数据、开发、生活等多个领域，免费、稳定、开箱即用</p>
+      <h2 class="page-title">探索免费 API 接口</h2>
+      <p class="page-subtitle">
+        覆盖 AI、数据、开发、生活等多个领域，免费、稳定、开箱即用
+      </p>
     </div>
 
     <div class="filter-section card">
@@ -12,14 +14,35 @@
           :key="filter.key"
           :type="activeFilter === filter.key ? 'primary' : 'default'"
           size="small"
-          @click="activeFilter = filter.key"
+          @click="handleFilterChange(filter.key)"
         >
           {{ filter.label }} {{ filter.count }}
         </el-button>
       </div>
     </div>
 
-    <div class="api-grid">
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-container">
+      <el-skeleton :rows="3" animated />
+      <div class="api-grid">
+        <el-skeleton
+          :rows="4"
+          animated
+          v-for="i in 6"
+          :key="i"
+          class="api-card card"
+        />
+      </div>
+    </div>
+
+    <!-- 错误提示 -->
+    <div v-else-if="error" class="error-container">
+      <el-empty description="获取API列表失败" />
+      <el-button type="primary" @click="fetchApisData">重试</el-button>
+    </div>
+
+    <!-- API列表 -->
+    <div v-else class="api-grid">
       <div
         v-for="api in apiList"
         :key="api.id"
@@ -29,14 +52,15 @@
         <div class="api-header">
           <div class="api-icon-wrapper">
             <div class="api-icon">
-              <el-icon :size="20">
+              <el-icon v-if="api.icon" :size="20">
                 <component :is="api.icon" />
               </el-icon>
+              <span v-else class="api-first-char">{{ api.firstChar }}</span>
             </div>
             <div class="api-info">
               <div class="api-name">
                 {{ api.name }}
-                <span v-if="api.isFree" class="tag tag-free">免费</span>
+                <span v-if="api.is_free === 1" class="tag tag-free">免费</span>
               </div>
               <p class="api-desc">{{ api.description }}</p>
             </div>
@@ -44,61 +68,120 @@
         </div>
 
         <div class="api-path">
-          <span :class="['tag', api.method === 'POST' ? 'tag-post' : 'tag-get']">
+          <span
+            :class="['tag', api.method === 'POST' ? 'tag-post' : 'tag-get']"
+          >
             {{ api.method }}
           </span>
           <span class="path-text">{{ api.path }}</span>
-        </div>
-
-        <div class="api-stats">
-          <div class="stat-item">
-            <el-icon size="14" class="stat-icon"><View /></el-icon>
-            <span>{{ formatNumber(api.views) }}</span>
-          </div>
-          <div class="stat-item">
-            <el-icon size="14" class="stat-icon"><Star /></el-icon>
-            <span>{{ api.rating }}</span>
-          </div>
-          <div class="stat-item">
-            <el-icon size="14" class="stat-icon"><StarFilled /></el-icon>
-            <span>{{ api.score }}</span>
-          </div>
         </div>
       </div>
     </div>
 
     <div class="pagination">
-      <p class="pagination-text">共 156 个接口</p>
+      <p class="pagination-text">共 {{ apiList.length }} 个接口</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import * as ElementPlusIcons from '@element-plus/icons-vue'
-import { apiList } from '../mock'
+import { ref, onMounted, watch } from "vue";
+import * as ElementPlusIcons from "@element-plus/icons-vue";
+import { fetchApis } from "../mock";
 
-const emit = defineEmits(['openDrawer'])
+const props = defineProps<{
+  selectedCategory: string;
+  searchQuery: string;
+}>();
 
-const activeFilter = ref('all')
+const emit = defineEmits(["openDrawer", "apiSelected"]);
+
+const activeFilter = ref("all");
+const apiList = ref([]);
+const loading = ref(false);
+const error = ref(false);
+
 const filters = [
-  { key: 'all', label: '全部', count: 156 },
-  { key: 'free', label: '免费', count: 156 },
-  { key: 'http', label: 'HTTP', count: 120 },
-  { key: 'get', label: 'GET', count: 98 },
-  { key: 'post', label: 'POST', count: 58 }
-]
+  { key: "all", label: "全部", count: 0 },
+  { key: "free", label: "免费", count: 0 },
+  { key: "http", label: "HTTP", count: 0 },
+  { key: "get", label: "GET", count: 0 },
+  { key: "post", label: "POST", count: 0 },
+];
 
-const formatNumber = (num: number) => {
-  if (num >= 10000) {
-    return (num / 10000).toFixed(1) + 'k'
+const fetchApisData = async (category?: string) => {
+  loading.value = true;
+  error.value = false;
+
+  try {
+    const data = await fetchApis(category);
+
+    // 应用搜索过滤
+    let filteredData = data;
+    if (props.searchQuery) {
+      const query = props.searchQuery.toLowerCase();
+      filteredData = data.filter(
+        (api: any) =>
+          api.name.toLowerCase().includes(query) ||
+          api.description.toLowerCase().includes(query) ||
+          api.path.toLowerCase().includes(query),
+      );
+    }
+
+    apiList.value = filteredData;
+
+    // 更新筛选器计数
+    filters[0].count = filteredData.length;
+    filters[1].count = filteredData.filter(
+      (api: any) => api.is_free === 1,
+    ).length;
+    filters[2].count = filteredData.length; // HTTP 计数
+    filters[3].count = filteredData.filter(
+      (api: any) => api.method === "GET",
+    ).length;
+    filters[4].count = filteredData.filter(
+      (api: any) => api.method === "POST",
+    ).length;
+  } catch (err) {
+    console.error("Failed to fetch APIs:", err);
+    error.value = true;
+  } finally {
+    loading.value = false;
   }
-  return num.toString()
-}
+};
+
+const handleFilterChange = (filterKey: string) => {
+  activeFilter.value = filterKey;
+
+  // 刷新数据，让搜索和分类过滤重新应用
+  fetchApisData(props.selectedCategory);
+};
 
 const handleApiClick = (api: any) => {
-  emit('openDrawer')
-}
+  emit("apiSelected", api);
+  emit("openDrawer");
+};
+
+// 监听分类变化
+watch(
+  () => props.selectedCategory,
+  (newCategory) => {
+    fetchApisData(newCategory);
+  },
+  { immediate: true },
+);
+
+// 监听搜索关键词变化
+watch(
+  () => props.searchQuery,
+  () => {
+    fetchApisData(props.selectedCategory);
+  },
+);
+
+onMounted(() => {
+  fetchApisData(props.selectedCategory);
+});
 </script>
 
 <style scoped>
@@ -116,7 +199,11 @@ const handleApiClick = (api: any) => {
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 8px;
-  background: linear-gradient(90deg, var(--text-primary) 0%, var(--primary-hover) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--text-primary) 0%,
+    var(--primary-hover) 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -146,9 +233,28 @@ const handleApiClick = (api: any) => {
 }
 
 .filter-tabs :deep(.el-button.is-active) {
-  background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--primary-color) 0%,
+    var(--primary-hover) 100%
+  );
   border-color: var(--primary-color);
   color: #fff;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.error-container {
+  text-align: center;
+  padding: 40px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
 .api-grid {
@@ -162,6 +268,12 @@ const handleApiClick = (api: any) => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.api-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .api-header {
@@ -186,6 +298,13 @@ const handleApiClick = (api: any) => {
   justify-content: center;
   color: var(--primary-color);
   flex-shrink: 0;
+}
+
+.api-first-char {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-color);
+  text-transform: uppercase;
 }
 
 .api-info {
@@ -232,25 +351,6 @@ const handleApiClick = (api: any) => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.api-stats {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding-top: 4px;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.stat-icon {
-  color: var(--text-muted);
 }
 
 .pagination {

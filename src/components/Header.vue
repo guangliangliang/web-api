@@ -42,16 +42,18 @@
 
       <div class="search-section">
         <el-input
+          v-model="searchQuery"
           class="search-input"
           placeholder="搜索接口名称、功能、关键词..."
           prefix-icon="Search"
           size="large"
+          @blur="handleSearch"
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
         />
       </div>
 
       <div class="nav-section">
-        <el-button type="text" class="nav-link">API 文档</el-button>
-        <el-button type="text" class="nav-link">关于我们</el-button>
         <el-button :bg="false" class="theme-btn" @click="toggleTheme">
           {{ isDark ? "白天" : "黑夜" }}
         </el-button>
@@ -64,6 +66,13 @@
 import { ref, onMounted } from "vue";
 
 const isDark = ref(true);
+const searchQuery = ref("");
+
+const emit = defineEmits(["search"]);
+
+const handleSearch = () => {
+  emit("search", searchQuery.value);
+};
 
 const toggleTheme = () => {
   isDark.value = !isDark.value;
