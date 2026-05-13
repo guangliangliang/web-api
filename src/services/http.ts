@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:3001'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 // 创建axios实例
 export const axiosInstance = axios.create({
@@ -21,7 +21,7 @@ export async function request<T>(url: string, options?: any): Promise<T> {
     // 检查缓存
     const cacheKey = `${url}_${JSON.stringify(options)}`
     const cachedData = cache[cacheKey]
-    
+
     if (cachedData && (Date.now() - cachedData.timestamp) < CACHE_DURATION) {
       return cachedData.data as T
     }
@@ -32,7 +32,7 @@ export async function request<T>(url: string, options?: any): Promise<T> {
     })
 
     const data = response.data
-    
+
     // 检查API响应状态
     if (data.code !== 200) {
       const errorMessage = data.message?.error || data.message || '请求失败'
